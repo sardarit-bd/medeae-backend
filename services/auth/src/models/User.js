@@ -21,8 +21,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "user"],
-      default: "user"
+      enum: ["admin", "patient", 'doctor'],
+      default: "patient"
     }
   },
   { timestamps: true } // adds createdAt & updatedAt automatically

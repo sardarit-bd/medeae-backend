@@ -6,7 +6,6 @@ import generateToken from "../../utils/generateToken.js";
 
 /********************  User registration Controller here ***********************/
 const registerUser = async (req, res) => {
-
   try {
     const { name, email, password } = req.body;
 
@@ -66,6 +65,7 @@ const loginUser = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token: generateToken(user._id, user.name, user.role),
     });
   } catch (err) {

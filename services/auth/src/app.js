@@ -8,11 +8,6 @@ import express from "express";
 import { errorHandler, notFound } from './middlewares/errorMiddleware.js';
 import authRoutes from './routes/authroute/authUserRoutes.js';
 import healthRoutes from "./routes/health/healthRoute.js";
-import productRoutes from './routes/productroute/productRoute.js';
-import profileRoutes from './routes/profile/profileRoute.js';
-import userRoutes from './routes/userroute/userRoutes.js';
-
-
 
 /****** express app initilazation here *******/
 const app = express();
@@ -27,8 +22,6 @@ app.use(express.urlencoded({ extended: true }));
 /*********** Middleware Here ***********/
 app.use(cors());
 app.use(express.json());
-
-
 
 app.use((req, res, next) => {
     console.log("🔥 Incoming request:");
@@ -47,23 +40,6 @@ app.use("/hi", (req, res) => {
 
 /********** auth Routes Define Here *********/
 app.use("/", authRoutes);
-
-
-/********** user Routes Define Here *********/
-app.use("/", userRoutes);
-
-
-
-/********** Product Routes Define Here *********/
-app.use("/", productRoutes);
-
-
-
-/********** Profile Routes Define Here *********/
-app.use("/", profileRoutes);
-
-
-
 /********** health check Routes Define Here *********/
 app.use("/", healthRoutes);
 
