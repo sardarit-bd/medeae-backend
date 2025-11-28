@@ -4,7 +4,7 @@ import environment from "./config/env.js";
 
 
 /******** PORT Define *******/
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PROFILE_SERVICE_PORT || 5002;
 
 
 /********** Connect to Database Here **********/
