@@ -11,7 +11,7 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./api-getway/.env.development
+      - .env.development
     volumes:
       - ./api-getway:/app
       - /app/node_modules
@@ -28,7 +28,7 @@ services:
     ports:
       - "5001:5001"
     env_file:
-      - ./services/auth/.env.development  
+      - .env.development  
     volumes:
       - ./services/auth:/app              
       - /app/node_modules                        
@@ -45,7 +45,7 @@ services:
     ports:
       - "5002:5002"
     env_file:
-      - ./services/profile/.env.development
+      - .env.development
     volumes:
       - ./services/profile:/app
       - /app/node_modules

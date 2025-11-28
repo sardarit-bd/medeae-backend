@@ -2,7 +2,7 @@ import app from "./app.js";
 import environment from "./config/env.js";
 
 /******** PORT Define *******/
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.API_GATEWAY_PORT || 5000;
 
 
 /*********** Start The Server ***********/
