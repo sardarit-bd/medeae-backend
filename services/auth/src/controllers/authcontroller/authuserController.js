@@ -1,13 +1,32 @@
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
 import generateToken from "../../utils/generateToken.js";
+import loginSchema from "../../validationSchema/loginSchema.js";
+import registerSchema from "../../validationSchema/registerSchema.js";
 
 
 
 /********************  User registration Controller here ***********************/
 const registerUser = async (req, res) => {
+  if (!req.body) {
+    return res.status(400).json({
+      success: false,
+      message: "Body is required.",
+    });
+  }
+  const { error, value } = registerSchema.validate(req.body, { abortEarly: false });
+
+  // If validation fails, return 400 with all validation errors
+  if (error) {
+    const validationErrors = error.details.map((err) => err.message);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid user data.",
+      errors: validationErrors,
+    });
+  }
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = value;
 
     const userExists = await User.findOne({ email });
 
@@ -32,6 +51,7 @@ const registerUser = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
       token: generateToken(user._id, user.role),
     });
   } catch (err) {
@@ -43,8 +63,29 @@ const registerUser = async (req, res) => {
 /******************** Login User Controller here ***********************/
 
 const loginUser = async (req, res) => {
+
+  if (!req.body) {
+    return res.status(400).json({
+      success: false,
+      message: "Body is required.",
+    });
+  }
+
+  const { error, value } = loginSchema.validate(req.body, { abortEarly: false });
+
+
+  // If validation fails, return 400 with all validation errors
+  if (error) {
+    const validationErrors = error.details.map((err) => err.message);
+    return res.status(400).json({
+      success: false,
+      message: "Invalid user data.",
+      errors: validationErrors,
+    });
+  }
+
   try {
-    const { email, password } = req.body;
+    const { email, password } = value;
 
     // Check if user exists
     const user = await User.findOne({ email });
@@ -72,9 +113,6 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
-
-
 
 export {
   loginUser, registerUser
