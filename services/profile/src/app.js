@@ -35,10 +35,6 @@ app.use(express.json());
 app.use("/", checkRoutes);
 
 
-
-
-
-
 /********** auth Routes Define Here *********/
 app.use("/", authRoutes);
 
