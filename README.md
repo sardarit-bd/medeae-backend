@@ -190,53 +190,45 @@ pro_id, établissement_id, photos, vidéos, tarification, disponibilités, certi
 ---
 
 
-### ⚙️ Environment Variables  
-Create a file named `.env.local` in the **project root directory** and add the following:
-
-```bash
-NEXT_PUBLIC_BASE_URL = Your backend base url here
-
-```
-
-
-
 ### Clone the repository and move the folder
 
 ```bash
-git clone https://github.com/sardarit-bd/med-ease-frontend.git
+git clone https://github.com/sardarit-bd/medeae-backend.git
 
-cd med-ease-frontend
+cd medeae-backend
 
 ```
 
-
-
-
-### Install dependencies and start the server
+### ⚙️ Environment Variables  
+Create a file named `.env.development` in the **api-gateway directory** and add the following:
 
 ```bash
-npm install
-
-# Start the server in development mode (using nodemon)
-npm run dev
-
-# Or start normally
-npm start
+# Application Port
+PORT=5000
+# Environment Here
+NODE_ENV=development
+#jwt secrect
+JWT_SECRET=**************
 
 ```
 
+Create a file named `.env.development` in each services
 
+### Install dependencies and start the server
+- install docker in your PC
 
+```bash
+docker compose up
 
+```
 
 
 ### You will see"
-Site is runing: http://localhost:3000
-
+Site is runing: http://localhost:5000
 
 
 ### And you can access 
-http://localhost:3000
+http://localhost:5000
 
 
 
