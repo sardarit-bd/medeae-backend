@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
-import generateToken from "../../utils/generateToken.js";
+import { createUserTokens } from "../../utils/createUserToken.js";
+import { setAuthCookie } from "../../utils/setCookie.js";
 import loginSchema from "../../validationSchema/loginSchema.js";
 import registerSchema from "../../validationSchema/registerSchema.js";
 
@@ -52,7 +53,6 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -100,21 +100,101 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
+    const tokenInfo = createUserTokens(user);
+    setAuthCookie(res, tokenInfo);
     // If valid → return user data and token
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.name, user.role),
+      token: tokenInfo,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-export {
-  loginUser, registerUser
-};
+
+const logout = async (req, res, next) => {
+  try {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
+    res.json({
+      success: true,
+      statusCode: 200,
+      message: "User Logged Out Successfully!",
+      data: null,
+    });
+  } catch (err) {
+    console.log(err)
+    next(err)
+  }
+}
+
+const changePassword = async (req, res, next) => {
+  const decodedToken = req.user;
+
+  const newPassword = req.body.newPassword;
+  const oldPassword = req.body.oldPassword;
+
+  const user = await User.findById(decodedToken.userId);
+
+  const isOldPasswordMatched = await bcrypt.compare(
+    oldPassword,
+    user?.password
+  );
+
+
+  if (!isOldPasswordMatched) {
+    return res.json({
+      success: false,
+      statusCode: 400,
+      message: "Password does not matched!",
+      data: null,
+    });
+  }
+
+  user.password = await bcrypt.hash(
+    newPassword,
+    Number(10)
+  );
+  user.save();
+
+  res.json({
+    success: true,
+    statusCode: 200,
+    message: "Password Reset Successfully!",
+    data: null,
+  });
+}
+
+const googleCallbackController = async (req, res, next) => {
+  try {
+    let redirectTo = req.query.state ? (req.query.state) : "";
+
+    if (redirectTo.startsWith("/")) {
+      redirectTo = redirectTo.slice(1);
+    }
+
+    const user = req.user;
+
+    const tokenInfo = createUserTokens(user);
+    setAuthCookie(res, tokenInfo);
+    res.redirect(`${process.env.CORS_ORIGIN}/${redirectTo}`);
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+export { changePassword, googleCallbackController, loginUser, logout, registerUser };
 
