@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
-import generateToken from "../../utils/generateToken.js";
+import { createUserTokens } from "../../utils/createUserToken.js";
+import { setAuthCookie } from "../../utils/setCookie.js";
 import loginSchema from "../../validationSchema/loginSchema.js";
 import registerSchema from "../../validationSchema/registerSchema.js";
 
@@ -52,7 +53,6 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -100,21 +100,44 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
+    const tokenInfo = createUserTokens(user);
+    setAuthCookie(res, tokenInfo);
     // If valid → return user data and token
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.name, user.role),
+      token: tokenInfo,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-export {
-  loginUser, registerUser
-};
+const googleCallbackController = async (req, res, next) => {
+  try {
+    let redirectTo = req.query.state ? (req.query.state) : "";
+
+    if (redirectTo.startsWith("/")) {
+      redirectTo = redirectTo.slice(1);
+    }
+
+    const user = req.user;
+
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+    }
+
+    const tokenInfo = createUserTokens(user);
+    setAuthCookie(res, tokenInfo);
+
+    res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+}
+
+export { googleCallbackController, loginUser, registerUser };
 
