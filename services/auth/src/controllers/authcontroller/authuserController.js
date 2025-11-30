@@ -125,14 +125,9 @@ const googleCallbackController = async (req, res, next) => {
 
     const user = req.user;
 
-    if (!user) {
-      throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
-    }
-
     const tokenInfo = createUserTokens(user);
     setAuthCookie(res, tokenInfo);
-
-    res.redirect(`${envVars.FRONTEND_URL}/${redirectTo}`);
+    res.redirect(`${process.env.CORS_ORIGIN}/${redirectTo}`);
   } catch (err) {
     console.log(err)
     res.status(500).json({ message: "Server error", error: err.message });
