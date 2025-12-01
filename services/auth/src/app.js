@@ -1,6 +1,8 @@
 /****** core modules import here *******/
 import cors from "cors";
 import express from "express";
+import passport from 'passport';
+import './config/passport.js';
 
 
 
@@ -12,7 +14,8 @@ import healthRoutes from "./routes/health/healthRoute.js";
 /****** express app initilazation here *******/
 const app = express();
 
-
+app.use(passport.initialize());
+// app.use(passport.session());
 
 /********* Body Data Parse **********/
 app.use(express.json());
