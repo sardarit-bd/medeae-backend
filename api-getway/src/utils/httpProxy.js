@@ -4,8 +4,10 @@ import { SERVICES } from "./serviceRegistry.js";
 export default function forward(service) {
 
 
-    if (!SERVICES[service])
+
+    if (!SERVICES[service]) {
         throw new Error(`Unknown service requested: ${service}`);
+    }
 
     return createProxyMiddleware({
         target: SERVICES[service],
