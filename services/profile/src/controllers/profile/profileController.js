@@ -2,12 +2,6 @@ import ProfileSchama from "../../validationSchema/profileSchema.js";
 
 
 
-
-
-
-
-
-
 /********** get all product controller is here **********/
 const getAllUserProfileInfo = async (req, res) => {
 

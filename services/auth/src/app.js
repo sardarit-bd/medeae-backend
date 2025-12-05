@@ -17,6 +17,7 @@ const app = express();
 app.use(passport.initialize());
 // app.use(passport.session());
 
+
 /********* Body Data Parse **********/
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

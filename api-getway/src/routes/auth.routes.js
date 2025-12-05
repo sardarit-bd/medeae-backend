@@ -1,5 +1,6 @@
 import express from "express";
 import proxyController from "../controller/proxyController.js";
+import { checkAuth } from "../middlewares/checkAuth.js";
 
 const router = express.Router();
 
@@ -12,9 +13,9 @@ router.post("/reset-password", proxyController.auth);
 
 router.get('/google', proxyController.auth)
 router.get('/google/callback', proxyController.auth)
-router.get("/me", proxyController.auth);
+router.get("/me", checkAuth('patient', 'doctor'), proxyController.auth);
 
-router.post('/send-otp', proxyController.auth)
-router.post('/verify-otp', proxyController.auth)
+router.post('/send-otp', proxyController.auth);
+router.post('/verify-otp', proxyController.auth);
 
 export default router;

@@ -12,12 +12,31 @@ export default function forward(service) {
         changeOrigin: true,
         pathRewrite: (path, req) => path.replace(/^\/[^/]+/, ""),
         onProxyReq(proxyReq, req) {
+
+
+
+            // Forward auth token
+            if (req.headers.authorization) {
+                proxyReq.setHeader("x-access-token", req.headers.authorization);
+            }
+
+            // Forward user info from checkAuth middleware
+            if (req.user) {
+                proxyReq.setHeader("x-user-email", req.user.email);
+                proxyReq.setHeader("x-user-role", req.user.role);
+            }
+
+
+            // Forward body data
             if (req.body) {
                 const bodyData = JSON.stringify(req.body);
                 proxyReq.setHeader("Content-Type", "application/json");
                 proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
                 proxyReq.write(bodyData);
             }
+
+
+
         },
         logLevel: "debug"
     });
