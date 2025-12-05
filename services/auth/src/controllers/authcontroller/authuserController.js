@@ -1,179 +1,25 @@
-import bcrypt from "bcryptjs";
+import crypto from 'crypto';
+import { redisClient } from "../../config/redis.config.js";
 import User from "../../models/User.js";
 import { createUserTokens } from "../../utils/createUserToken.js";
+import { sendVerificationEmail } from "../../utils/sendEmail.js";
 import { setAuthCookie } from "../../utils/setCookie.js";
-import loginSchema from "../../validationSchema/loginSchema.js";
-import registerSchema from "../../validationSchema/registerSchema.js";
 
+const getMe = async (req, res, next) => {
+  const { email } = req.user
+  const user = await User.findOne({ email }).select('-password');
 
-
-/********************  User registration Controller here ***********************/
-const registerUser = async (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({
-      success: false,
-      message: "Body is required.",
-    });
-  }
-  const { error, value } = registerSchema.validate(req.body, { abortEarly: false });
-
-  // If validation fails, return 400 with all validation errors
-  if (error) {
-    const validationErrors = error.details.map((err) => err.message);
-    return res.status(400).json({
-      success: false,
-      message: "Invalid user data.",
-      errors: validationErrors,
-    });
-  }
-  try {
-    const { name, email, password } = value;
-
-    const userExists = await User.findOne({ email });
-
-    if (userExists) return res.status(400).json({ message: "User already exists" });
-
-
-    // Hash the password
-    const salt = await bcrypt.genSalt(10); // 10 = number of salt rounds
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-
-
-    // Create user with hashed password
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-    });
-
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
-/******************** Login User Controller here ***********************/
-
-const loginUser = async (req, res) => {
-
-  if (!req.body) {
-    return res.status(400).json({
-      success: false,
-      message: "Body is required.",
-    });
+  if (!user) {
+    return res.status(401).json({ message: "User is not found." });
   }
 
-  const { error, value } = loginSchema.validate(req.body, { abortEarly: false });
-
-
-  // If validation fails, return 400 with all validation errors
-  if (error) {
-    const validationErrors = error.details.map((err) => err.message);
-    return res.status(400).json({
-      success: false,
-      message: "Invalid user data.",
-      errors: validationErrors,
-    });
-  }
-
-  try {
-    const { email, password } = value;
-
-    // Check if user exists
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    // Compare password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-    const tokenInfo = createUserTokens(user);
-    setAuthCookie(res, tokenInfo);
-    // If valid → return user data and token
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: tokenInfo,
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
-
-
-const logout = async (req, res, next) => {
-  try {
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-    });
-    res.json({
-      success: true,
-      statusCode: 200,
-      message: "User Logged Out Successfully!",
-      data: null,
-    });
-  } catch (err) {
-    console.log(err)
-    next(err)
-  }
-}
-
-const changePassword = async (req, res, next) => {
-  const decodedToken = req.user;
-
-  const newPassword = req.body.newPassword;
-  const oldPassword = req.body.oldPassword;
-
-  const user = await User.findById(decodedToken.userId);
-
-  const isOldPasswordMatched = await bcrypt.compare(
-    oldPassword,
-    user?.password
-  );
-
-
-  if (!isOldPasswordMatched) {
-    return res.json({
-      success: false,
-      statusCode: 400,
-      message: "Password does not matched!",
-      data: null,
-    });
-  }
-
-  user.password = await bcrypt.hash(
-    newPassword,
-    Number(10)
-  );
-  user.save();
+  // Compare password
 
   res.json({
     success: true,
     statusCode: 200,
-    message: "Password Reset Successfully!",
-    data: null,
+    message: "Retrived User",
+    data: user,
   });
 }
 
@@ -196,5 +42,101 @@ const googleCallbackController = async (req, res, next) => {
   }
 }
 
-export { changePassword, googleCallbackController, loginUser, logout, registerUser };
+const generateOtp = (length = 6) => {
+  const otp = crypto.randomInt(10 ** (length - 1), 10 ** length);
+
+  return otp;
+};
+const sendOtp = async (req, res) => {
+  const { email } = req.body
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.json({
+      success: true,
+      statusCode: 404,
+      message: "User is not found!",
+      data: null,
+    })
+  }
+
+  if (user.isVerified) {
+    res.json({
+      success: true,
+      statusCode: 401,
+      message: "User is already verified.",
+      data: null,
+    });
+  }
+  const otp = generateOtp();
+  const redisKey = `otp:${email}`;
+
+  await redisClient.set(redisKey, otp, {
+    expiration: {
+      type: "EX",
+      value: 6000
+    },
+  });
+
+
+  sendVerificationEmail(req.body.email, otp)
+  res.json({
+    success: true,
+    statusCode: 200,
+    message: "OTP is sent to your email Successfully.",
+    data: null,
+  });
+}
+
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.json({
+      success: true,
+      statusCode: 404,
+      message: "User is not found!",
+      data: null,
+    })
+  }
+
+  const redisKey = `otp:${email}`;
+
+
+  const savedOtp = await redisClient.get(redisKey);
+
+  if (!savedOtp) {
+    return res.json({
+      success: true,
+      statusCode: 404,
+      message: "Invalid OTP",
+      data: null,
+    })
+  }
+
+  if (savedOtp !== otp) {
+    return res.json({
+      success: true,
+      statusCode: 404,
+      message: "Invalid OTP",
+      data: null,
+    })
+  }
+
+  await Promise.all([
+    User.updateOne({ email }, { isVerified: true }, { runValidators: true }),
+
+    redisClient.del([redisKey]),
+  ]);
+  res.json({
+    statusCode: 200,
+    success: true,
+    message: "OTP is verified Successfully",
+    data: null,
+  });
+}
+
+
+export { getMe, googleCallbackController, sendOtp, verifyOtp };
 
