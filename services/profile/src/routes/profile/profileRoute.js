@@ -6,7 +6,6 @@ import { protect } from "../../middlewares/authMiddleware.js";
 const router = express.Router();
 
 
-
 router.get("/allproducts", protect, getAllUserProfileInfo);
 
 router.get("/singleProduct/:id", protect, getSingleUserProfileInfo);

@@ -6,7 +6,9 @@ import { sendVerificationEmail } from "../../utils/sendEmail.js";
 import { setAuthCookie } from "../../utils/setCookie.js";
 
 const getMe = async (req, res, next) => {
-  const { email } = req.user
+
+  const email = req.headers["x-user-email"];
+
   const user = await User.findOne({ email }).select('-password');
 
   if (!user) {
@@ -14,7 +16,6 @@ const getMe = async (req, res, next) => {
   }
 
   // Compare password
-
   res.json({
     success: true,
     statusCode: 200,

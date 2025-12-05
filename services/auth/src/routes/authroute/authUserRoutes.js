@@ -8,7 +8,6 @@ import { loginUser } from "../../controllers/authcontroller/login.controller.js"
 import { logout } from "../../controllers/authcontroller/logout.controller.js";
 import { registerUser } from "../../controllers/authcontroller/register.controller.js";
 import { resetPassword } from "../../controllers/authcontroller/resetPassword.controller.js";
-import { checkAuth } from "../../middlewares/checkAuth.js";
 
 
 const router = express.Router();
@@ -18,18 +17,14 @@ router.post("/login", loginUser);
 router.post("/logout", logout);
 
 
-router.post(
-    "/change-password",
-    checkAuth('patient'),
-    changePassword
-);
+router.post("/change-password", changePassword);
 
 router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", checkAuth('patient', 'doctor'), resetPassword);
+router.post("/reset-password", resetPassword);
 
 router.post('/send-otp', sendOtp)
 router.post('/verify-otp', verifyOtp)
-router.get('/me', checkAuth('patient', 'doctor'), getMe)
+router.get('/me', getMe);
 
 router.get(
     "/google",
@@ -51,5 +46,6 @@ router.get(
     }),
     googleCallbackController
 );
+
 
 export default router;

@@ -1,4 +1,4 @@
-import { generateToken, verifyToken } from "./jwt.js";
+import { generateToken, verifyToken } from "../utils/jwt.js";
 
 
 export const createUserTokens = (user) => {
