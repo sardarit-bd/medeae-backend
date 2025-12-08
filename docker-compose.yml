@@ -50,4 +50,22 @@ services:
       - ./services/profile:/app
       - /app/node_modules
     command: npm run dev
+
+
+
+  # Profile Backend Service
+  patient-backend:
+    container_name: medease-patient-backend
+    build:
+      context: ./services/patient
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5003:5003"
+    env_file:
+      - .env.development
+    volumes:
+      - ./services/patient:/app
+      - /app/node_modules
+    command: npm run dev
   

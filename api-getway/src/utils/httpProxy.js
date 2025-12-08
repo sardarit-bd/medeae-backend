@@ -4,8 +4,10 @@ import { SERVICES } from "./serviceRegistry.js";
 export default function forward(service) {
 
 
-    if (!SERVICES[service])
+
+    if (!SERVICES[service]) {
         throw new Error(`Unknown service requested: ${service}`);
+    }
 
     return createProxyMiddleware({
         target: SERVICES[service],
@@ -24,6 +26,7 @@ export default function forward(service) {
             if (req.user) {
                 proxyReq.setHeader("x-user-email", req.user.email);
                 proxyReq.setHeader("x-user-role", req.user.role);
+                proxyReq.setHeader("x-user-id", req.user.userId);
             }
 
 

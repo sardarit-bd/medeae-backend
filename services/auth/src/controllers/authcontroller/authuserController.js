@@ -4,10 +4,11 @@ import User from "../../models/User.js";
 import { createUserTokens } from "../../utils/createUserToken.js";
 import { sendVerificationEmail } from "../../utils/sendEmail.js";
 import { setAuthCookie } from "../../utils/setCookie.js";
+import uEmailandIdfinder from '../../utils/uEmailandIdfinder.js';
 
 const getMe = async (req, res, next) => {
 
-  const email = req.headers["x-user-email"];
+  const email = uEmailandIdfinder(req, 'email');
 
   const user = await User.findOne({ email }).select('-password');
 

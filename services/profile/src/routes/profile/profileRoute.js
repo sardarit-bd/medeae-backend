@@ -1,20 +1,19 @@
 import express from "express";
 import { createProfileInfo, deleteProfileInfo, getAllUserProfileInfo, getSingleUserProfileInfo, updateProfileInfo } from '../../controllers/profile/profileController.js';
-import { protect } from "../../middlewares/authMiddleware.js";
 
 
 const router = express.Router();
 
 
-router.get("/allproducts", protect, getAllUserProfileInfo);
+router.get("/allproducts", getAllUserProfileInfo);
 
-router.get("/singleProduct/:id", protect, getSingleUserProfileInfo);
+router.get("/singleProduct/:id", getSingleUserProfileInfo);
 
-router.post("/createProduct", protect, createProfileInfo);
+router.post("/createProduct", createProfileInfo);
 
-router.put("/updateProduct/:id", protect, updateProfileInfo);
+router.put("/updateProduct/:id", updateProfileInfo);
 
-router.delete("/deleteProduct/:id", protect, deleteProfileInfo);
+router.delete("/deleteProduct/:id", deleteProfileInfo);
 
 
 

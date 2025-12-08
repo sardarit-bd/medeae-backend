@@ -3,7 +3,7 @@ import forward from "../utils/httpProxy.js";
 const proxyController = {
     auth: forward("AUTH"),
     profile: forward("PROFILE"),
-    // payment: forward("PAYMENT"),
+    patient: forward("PATIENT"),
     // notification: forward("NOTIFICATION"),
     // chat: forward("CHAT"),
     // ai: forward("AI"),
