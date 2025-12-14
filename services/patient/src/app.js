@@ -17,14 +17,17 @@ import stockRoutes from './routes/stock.route.js';
 const app = express();
 
 
-
+app.use(cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
 /********* Body Data Parse **********/
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
 /*********** Middleware Here ***********/
-app.use(cors());
+
 app.use(express.json());
 
 
