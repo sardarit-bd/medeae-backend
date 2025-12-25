@@ -9,7 +9,7 @@ router.post("/register", proxyController.auth);
 router.post("/logout", proxyController.auth);
 router.post("/change-password", proxyController.auth);
 router.post("/forgot-password", proxyController.auth);
-router.post("/reset-password", proxyController.auth);
+router.post("/reset-password", checkAuth('patient', 'doctor'), proxyController.auth);
 
 router.get('/google', proxyController.auth)
 router.get('/google/callback', proxyController.auth)

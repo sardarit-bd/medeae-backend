@@ -14,21 +14,19 @@ async function createDosesForMedicine(medicine, startDate = new Date()) {
 
     while (currentDate <= endDate) {
         // Check if this day is in schedule
-        const dayOfWeek = currentDate.getDay() + 1; // Sunday=1
 
-        if (!medicine.dosage.daysOfWeek || medicine.dosage.daysOfWeek.includes(dayOfWeek)) {
-            for (const timeStr of times) {
-                const [hours, minutes] = timeStr.split(':').map(Number);
-                const scheduledTime = new Date(currentDate);
-                scheduledTime.setHours(hours, minutes, 0, 0);
+        for (const timeStr of times) {
+            const hours = parseInt(timeStr)
+            const scheduledTime = new Date(currentDate);
+            console.log('scheduledTime', scheduledTime)
+            scheduledTime.setHours(hours, 0, 0, 0);
 
-                doses.push({
-                    user: medicine.user,
-                    medicine: medicine._id,
-                    scheduledTime,
-                    status: 'pending'
-                });
-            }
+            doses.push({
+                user: medicine.user,
+                medicine: medicine._id,
+                scheduledTime,
+                status: 'pending'
+            });
         }
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -61,14 +59,19 @@ const getAllPrescription = async (req, res) => {
         // Get medicine count for each prescription
         const prescriptionsWithCount = await Promise.all(
             prescriptions.map(async (prescription) => {
-                const medicineCount = await Medicine.countDocuments({
-                    prescription: prescription._id,
-                    user: req.user._id
-                });
+                // const medicineCount = await Medicine.countDocuments({
+                //     prescription: prescription._id,
+                //     user: user
+                // });
 
+                const medicines = await Medicine.find({
+                    prescription: prescription._id,
+                    user: user
+                });
                 return {
                     ...prescription.toObject(),
-                    medicinesCount: medicineCount
+                    // medicinesCount: medicineCount,
+                    medicines: medicines
                 };
             })
         );
@@ -113,7 +116,6 @@ const createPrescription = async (req, res) => {
     try {
         const { doctorName, doctorType, doctorContact, prescriptionDate, validUntil } = req.body;
         const user = req.headers['x-user-id']
-        console.log(user)
         const prescription = await Prescription.create({
             user: user,
             doctorName,
@@ -145,10 +147,12 @@ const addMedecineToPrescription = async (req, res) => {
             return res.status(404).json({ error: 'Prescription not found' });
         }
 
-        const { name, strength, form, dosage } = req.body;
+        const { name, strength, form, dosage, totalDays, takenDays } = req.body;
 
         // Create medicine under this prescription
         const medicine = await Medicine.create({
+            takenDays: takenDays || 0,
+            totalDays: totalDays || 0,
             user: user,
             prescription: prescription._id,
             name,

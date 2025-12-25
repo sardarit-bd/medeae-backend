@@ -9,8 +9,8 @@ const doseSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        default: 'pending', // pending, taken, missed
-        enum: ['pending', 'taken', 'missed']
+        default: 'pending', // pending, taken, missed, to take, future
+        enum: ['pending', 'taken', 'missed', 'to take', 'future']
     },
 
     createdAt: { type: Date, default: Date.now }

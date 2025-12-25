@@ -4,17 +4,13 @@ import User from "../../models/User.js";
 
 export const resetPassword = async (req, res, next) => {
     try {
-        const decodedToken = req.user;
+        const userId = req.headers['x-user-id']
+        console.log("User ID for password reset:", userId);
         const { password } = req.body;
 
-        const user = await User.findById(decodedToken.userId);
+        const user = await User.findById(userId);
         if (!user) {
-            return res.json({
-                success: false,
-                statusCode: 404,
-                message: "User does not found!",
-                data: null,
-            });
+            throw new Error("User not found");
         }
 
 

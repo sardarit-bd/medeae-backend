@@ -15,6 +15,8 @@ const medicineSchema = new mongoose.Schema({
     strength: String,
     form: String,
 
+    totalDays: { type: Number, default: 0 },
+    takenDays: { type: Number, default: 0 },
     // Dosage
     dosage: {
         amount: { type: Number, default: 1 },
@@ -37,13 +39,15 @@ const medicineSchema = new mongoose.Schema({
     hasStock: { type: Boolean, default: false },
     stockId: { type: mongoose.Schema.Types.ObjectId, ref: 'Stock' },
     currentStock: { type: Number, default: 0 },
+    storage: { type: String, default: 'Medicine cabinet' },
 
     // Duration
     startDate: { type: Date, default: Date.now },
     endDate: Date,
 
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    expiryDate: Date
 });
 
 export const Medicine = mongoose.model('Medicine', medicineSchema);

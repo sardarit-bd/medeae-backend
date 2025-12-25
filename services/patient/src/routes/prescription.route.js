@@ -3,7 +3,7 @@ import { prescriptionControllers } from '../controllers/prescription.controller.
 const router = express.Router();
 
 // Get all prescriptions
-router.get('/prescription', prescriptionControllers.getAllPrescription);  //protected
+router.get('/prescriptions', prescriptionControllers.getAllPrescription);  //protected
 
 // Get single prescription with medicines
 router.get('/prescription/:id', prescriptionControllers.getSinglePrescriptionWithMedecines);
