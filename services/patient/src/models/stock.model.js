@@ -4,7 +4,6 @@ const stockSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     medicineId: { type: mongoose.Schema.Types.ObjectId, ref: 'Medicine' },
 
-    name: { type: String, required: true },
     quantity: { type: Number, required: true, min: 0 },
     unit: { type: String, default: 'tablets' },
 

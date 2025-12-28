@@ -1,3 +1,4 @@
+import { Medicine } from "../models/medecine.model.js";
 import { Stock } from "../models/stock.model.js";
 
 const getAllStocks = async (req, res) => {
@@ -22,9 +23,10 @@ const getAllStocks = async (req, res) => {
 const addStock = async (req, res) => {
     try {
         const user = req.headers['x-user-id']
-        const { medicineId, quantity, unit, purchasedFrom, expiryDate, price } = req.body;
+        const { medicineId, quantity, unit, purchasedFrom, expiryDate, price, storage } = req.body;
 
         // Verify medicine exists and belongs to user
+        console.log(medicineId, user)
         const medicine = await Medicine.findOne({
             _id: medicineId,
             user: user
@@ -51,6 +53,9 @@ const addStock = async (req, res) => {
         medicine.hasStock = true;
         medicine.stockId = stockItem._id;
         medicine.currentStock = medicine?.currentStock + quantity;
+        medicine.updatedAt = new Date();
+        medicine.storage = storage || 'Medicine cabinet';
+        medicine.expiryDate = expiryDate;
         await medicine.save();
 
         res.status(201).json({

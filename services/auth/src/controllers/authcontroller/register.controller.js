@@ -2,7 +2,6 @@
 
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
-import registerSchema from "../../validationSchema/registerSchema.js";
 
 
 export const registerUser = async (req, res) => {
@@ -12,19 +11,8 @@ export const registerUser = async (req, res) => {
             message: "Body is required.",
         });
     }
-    const { error, value } = registerSchema.validate(req.body, { abortEarly: false });
-
-    // If validation fails, return 400 with all validation errors
-    if (error) {
-        const validationErrors = error.details.map((err) => err.message);
-        return res.status(400).json({
-            success: false,
-            message: "Invalid user data.",
-            errors: validationErrors,
-        });
-    }
     try {
-        const { name, email, password } = value;
+        const { name, email, password } = req.body;
 
         const userExists = await User.findOne({ email });
 

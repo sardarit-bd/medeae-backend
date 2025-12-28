@@ -15,14 +15,15 @@ const medicineSchema = new mongoose.Schema({
     strength: String,
     form: String,
 
+    totalDays: { type: Number, default: 0 },
+    takenDays: { type: Number, default: 0 },
     // Dosage
     dosage: {
         amount: { type: Number, default: 1 },
         unit: { type: String, default: 'tablet' },
         frequency: { type: String, default: 'daily' },
         timesPerDay: Number,
-        specificTimes: [String], // ["08:00", "12:00", "20:00"]
-        daysOfWeek: [Number], // [1,2,3,4,5,6,7] - Sunday=1
+        specificTimes: [String], // ["mornnig", "noon"]
         instructions: String
     },
 
@@ -37,13 +38,15 @@ const medicineSchema = new mongoose.Schema({
     hasStock: { type: Boolean, default: false },
     stockId: { type: mongoose.Schema.Types.ObjectId, ref: 'Stock' },
     currentStock: { type: Number, default: 0 },
+    storage: { type: String, default: 'Medicine cabinet' },
 
     // Duration
     startDate: { type: Date, default: Date.now },
     endDate: Date,
 
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    expiryDate: Date
 });
 
 export const Medicine = mongoose.model('Medicine', medicineSchema);

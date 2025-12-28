@@ -3,43 +3,36 @@ import { Medicine } from "../models/medecine.model.js";
 import { Prescription } from "../models/prescription.model.js";
 // Helper function to create doses
 async function createDosesForMedicine(medicine, startDate = new Date()) {
-    const doses = [];
-    const times = medicine.dosage.specificTimes || getDefaultTimes(medicine.dosage.timesPerDay);
+    try {
+        console.log(medicine)
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + medicine.totalDays);
 
-    // Create doses for next 30 days or until endDate
-    const endDate = medicine.endDate || new Date();
-    endDate.setDate(endDate.getDate() + 30);
-
-    const currentDate = new Date(startDate);
-
-    while (currentDate <= endDate) {
-        // Check if this day is in schedule
-        const dayOfWeek = currentDate.getDay() + 1; // Sunday=1
-
-        if (!medicine.dosage.daysOfWeek || medicine.dosage.daysOfWeek.includes(dayOfWeek)) {
-            for (const timeStr of times) {
-                const [hours, minutes] = timeStr.split(':').map(Number);
-                const scheduledTime = new Date(currentDate);
-                scheduledTime.setHours(hours, minutes, 0, 0);
-
+        const doses = [];
+        const currentDate = new Date();
+        while (currentDate <= endDate) {
+            for (const timeStr of medicine.dosage.specificTimes) {
                 doses.push({
                     user: medicine.user,
                     medicine: medicine._id,
-                    scheduledTime,
-                    status: 'pending'
+                    scheduledTime: timeStr,
+                    status: 'pending',
+                    scheduledDate: new Date(currentDate).toISOString().split('T')[0]
                 });
             }
+            console.log(currentDate)
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        // Save all doses
+        if (doses.length > 0) {
+            await Dose.insertMany(doses);
         }
 
-        currentDate.setDate(currentDate.getDate() + 1);
+        return doses.length;
+    } catch (err) {
+        console.log(err)
+        return "failed"
     }
-
-    // Save all doses
-    if (doses.length > 0) {
-        await Dose.insertMany(doses);
-    }
-
-    return doses.length;
 }
 
 function getDefaultTimes(timesPerDay) {
@@ -61,14 +54,19 @@ const getAllPrescription = async (req, res) => {
         // Get medicine count for each prescription
         const prescriptionsWithCount = await Promise.all(
             prescriptions.map(async (prescription) => {
-                const medicineCount = await Medicine.countDocuments({
-                    prescription: prescription._id,
-                    user: req.user._id
-                });
+                // const medicineCount = await Medicine.countDocuments({
+                //     prescription: prescription._id,
+                //     user: user
+                // });
 
+                const medicines = await Medicine.find({
+                    prescription: prescription._id,
+                    user: user
+                });
                 return {
                     ...prescription.toObject(),
-                    medicinesCount: medicineCount
+                    // medicinesCount: medicineCount,
+                    medicines: medicines
                 };
             })
         );
@@ -113,7 +111,6 @@ const createPrescription = async (req, res) => {
     try {
         const { doctorName, doctorType, doctorContact, prescriptionDate, validUntil } = req.body;
         const user = req.headers['x-user-id']
-        console.log(user)
         const prescription = await Prescription.create({
             user: user,
             doctorName,
@@ -145,10 +142,12 @@ const addMedecineToPrescription = async (req, res) => {
             return res.status(404).json({ error: 'Prescription not found' });
         }
 
-        const { name, strength, form, dosage } = req.body;
+        const { name, strength, form, dosage, totalDays, takenDays } = req.body;
 
         // Create medicine under this prescription
         const medicine = await Medicine.create({
+            takenDays: takenDays || 0,
+            totalDays: totalDays || 0,
             user: user,
             prescription: prescription._id,
             name,
@@ -199,4 +198,50 @@ const getExpiringPrescreption = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 }
-export const prescriptionControllers = { getAllPrescription, getSinglePrescriptionWithMedecines, createPrescription, addMedecineToPrescription, getExpiringPrescreption }
+
+
+const getDashboardSummary = async (req, res) => {
+    try {
+        const user = req.headers['x-user-id']
+        const prescriptions = await Prescription.countDocuments({ user: user });
+        const medicines = await Medicine.countDocuments({ user: user });
+        const expiringPrescriptions = await Prescription.countDocuments({
+            user: user,
+            validUntil: { $lte: new Date() }
+        });
+
+        const expiringMedicines = await Medicine.countDocuments({
+            user: user,
+            endDate: { $lte: new Date() }
+        });
+
+        const lowStockMedicines = await Medicine.countDocuments({
+            user: user,
+            stockQuantity: { $lte: 5 }
+        });
+
+        const todayDoses = await Dose.countDocuments({
+            user: user,
+            scheduledTime: {
+                $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                $lt: new Date(new Date().setHours(23, 59, 59, 999))
+            }
+        });
+
+        res.json({
+            success: true,
+            data: {
+                totalPrescriptions: prescriptions,
+                totalMedicines: medicines,
+                expiringPrescriptionsCount: expiringPrescriptions,
+                expiringMedicinesCount: expiringMedicines,
+                lowStockMedicinesCount: lowStockMedicines,
+                todayDosesCount: todayDoses
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export const prescriptionControllers = { getAllPrescription, getSinglePrescriptionWithMedecines, createPrescription, addMedecineToPrescription, getExpiringPrescreption, getDashboardSummary }

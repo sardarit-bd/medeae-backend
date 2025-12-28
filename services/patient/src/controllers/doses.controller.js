@@ -1,3 +1,4 @@
+import { Dose } from "../models/dose.model.js";
 import { Medicine } from "../models/medecine.model.js";
 
 const takeDoes = async (req, res) => {
@@ -15,12 +16,17 @@ const takeDoes = async (req, res) => {
         });
 
         if (!dose) {
-            return res.status(404).json({ error: 'Dose not found' });
+            return res.status(404).json({ error: `Dose for ${dose.medicine.name} not found` });
+        }
+
+        if (dose.status === 'taken') {
+            return res.status(400).json({ error: `Dose for ${dose.medicine.name} already taken` });
         }
 
         // Update dose status
         dose.status = 'taken';
         dose.takenTime = new Date();
+        console.log(dose)
         await dose.save();
 
         // Deduct from stock if medicine has stock
@@ -107,6 +113,110 @@ const getDosesByPrescription = async (req, res) => {
     }
 }
 
+
+const getDosesByUser = async (req, res) => {
+    try {
+        const user = req.headers['x-user-id'];
+
+        const { date } = req.query;
+
+        const medicines = await Medicine.find({
+            user: user
+        }).select('_id');
+
+        const medicineIds = medicines.map(m => m._id);
+
+        // Date filter
+        let dateFilter = {};
+        // if (date) {
+        //     const selectedDate = new Date(date);
+        //     selectedDate.setHours(0, 0, 0, 0);
+        //     const nextDay = new Date();
+        //     nextDay.setDate(nextDay.getDate() + 1);
+
+        //     dateFilter = {
+        //         scheduledDate: { $gte: selectedDate, $lt: nextDay }
+        //     };
+        // } else {
+        //     // Default to today
+
+        // }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        dateFilter = {
+            scheduledDate: { $gte: today, $lt: tomorrow }
+        };
+
+        const doses = await Dose.find({
+            user: user,
+            medicine: { $in: medicineIds },
+            ...dateFilter
+        })
+            .populate({
+                path: 'medicine',
+                populate: {
+                    path: 'prescription',
+                    select: 'doctorName'
+                }
+            })
+            .sort('scheduledTime');
+
+        // Organize doses into morning, noon, evening
+        const organizedDoses = {
+            morning: [],
+            noon: [],
+            evening: []
+        };
+
+        console.log(doses)
+
+        for (const dose of doses) {
+            // ---------- TIME OF DAY CATEGORY ----------
+            let newStatus = dose.status;
+
+            if (dose.scheduledTime === "morning") {
+                if (newStatus !== 'taken' && 6 < date < 9) {
+                    dose.status = 'to take'
+                }
+                if (newStatus !== 'taken' && date > 9) {
+                    dose.status = 'missed'
+                }
+                organizedDoses.morning.push(dose);
+
+            } else if (dose.scheduledTime === "noon") {
+                if (newStatus !== 'taken' && 11 < date < 13) {
+                    dose.status = 'to take'
+                }
+                if (newStatus !== 'taken' && date > 13) {
+                    dose.status = 'missed'
+                }
+                organizedDoses.noon.push(dose);
+            } else {
+                if (newStatus !== 'taken' && 16 < date < 19) {
+                    dose.status = 'to take'
+                }
+                if (newStatus != 'taken' && date > 19) {
+                    dose.status = 'missed'
+                }
+                organizedDoses.evening.push(dose);
+            }
+            await dose.save();
+        }
+
+        res.json({
+            success: true,
+            data: organizedDoses
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: error.message });
+    }
+}
+
 const getDosesStates = async (req, res) => {
     try {
         const { days = 30 } = req.query;
@@ -122,6 +232,7 @@ const getDosesStates = async (req, res) => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - parseInt(days));
         startDate.setHours(0, 0, 0, 0);
+
 
         const doses = await Dose.find({
             user: req.user._id,
@@ -157,5 +268,6 @@ const getDosesStates = async (req, res) => {
 export const dosesController = {
     takeDoes,
     getDosesByPrescription,
-    getDosesStates
+    getDosesStates,
+    getDosesByUser
 }
