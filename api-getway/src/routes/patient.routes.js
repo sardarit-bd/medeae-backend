@@ -57,4 +57,6 @@ router.get('/prescription/:prescriptionId/doses', proxyController.patient);
 // Get adherence stats by prescription
 router.get('/stats/prescription/:prescriptionId', proxyController.patient)
 
+router.get('/dashboard/summary', checkAuth('patient', 'doctor'), proxyController.patient);
+
 export default router;

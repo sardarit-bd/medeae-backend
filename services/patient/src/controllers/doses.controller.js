@@ -16,12 +16,17 @@ const takeDoes = async (req, res) => {
         });
 
         if (!dose) {
-            return res.status(404).json({ error: 'Dose not found' });
+            return res.status(404).json({ error: `Dose for ${dose.medicine.name} not found` });
+        }
+
+        if (dose.status === 'taken') {
+            return res.status(400).json({ error: `Dose for ${dose.medicine.name} already taken` });
         }
 
         // Update dose status
         dose.status = 'taken';
         dose.takenTime = new Date();
+        console.log(dose)
         await dose.save();
 
         // Deduct from stock if medicine has stock
@@ -112,7 +117,7 @@ const getDosesByPrescription = async (req, res) => {
 const getDosesByUser = async (req, res) => {
     try {
         const user = req.headers['x-user-id'];
-        console.log('Fetching doses for user:', user);
+
         const { date } = req.query;
 
         const medicines = await Medicine.find({
@@ -123,26 +128,28 @@ const getDosesByUser = async (req, res) => {
 
         // Date filter
         let dateFilter = {};
-        if (date) {
-            const selectedDate = new Date(date);
-            selectedDate.setHours(0, 0, 0, 0);
-            const nextDay = new Date(selectedDate);
-            nextDay.setDate(nextDay.getDate() + 1);
+        // if (date) {
+        //     const selectedDate = new Date(date);
+        //     selectedDate.setHours(0, 0, 0, 0);
+        //     const nextDay = new Date();
+        //     nextDay.setDate(nextDay.getDate() + 1);
 
-            dateFilter = {
-                scheduledTime: { $gte: selectedDate, $lt: nextDay }
-            };
-        } else {
-            // Default to today
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
+        //     dateFilter = {
+        //         scheduledDate: { $gte: selectedDate, $lt: nextDay }
+        //     };
+        // } else {
+        //     // Default to today
 
-            dateFilter = {
-                scheduledTime: { $gte: today, $lt: tomorrow }
-            };
-        }
+        // }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        dateFilter = {
+            scheduledDate: { $gte: today, $lt: tomorrow }
+        };
 
         const doses = await Dose.find({
             user: user,
@@ -165,50 +172,47 @@ const getDosesByUser = async (req, res) => {
             evening: []
         };
 
-        const now = new Date();
-        const TAKE_WINDOW_MINUTES = 30;
-        const TAKE_WINDOW_MS = TAKE_WINDOW_MINUTES * 60 * 1000;
+        console.log(doses)
 
         for (const dose of doses) {
-            const scheduledTime = new Date(dose.scheduledTime);
-            const hour = scheduledTime.getHours();
-
-            // ---------- STATUS LOGIC ----------
-            if (dose.status !== 'taken') {
-                const diff = now - scheduledTime;
-                let newStatus = dose.status;
-
-                if (scheduledTime > now) {
-                    newStatus = 'future';
-                }
-                else if (diff >= 0 && diff <= TAKE_WINDOW_MS) {
-                    newStatus = 'to take';
-                }
-                else if (diff > TAKE_WINDOW_MS) {
-                    newStatus = 'missed';
-                }
-
-                // Save only if changed
-                if (newStatus !== dose.status) {
-                    dose.status = newStatus;
-                    await dose.save();
-                }
-            }
-
             // ---------- TIME OF DAY CATEGORY ----------
-            if (hour >= 5 && hour < 12) {
+            let newStatus = dose.status;
+
+            if (dose.scheduledTime === "morning") {
+                if (newStatus !== 'taken' && 6 < date < 9) {
+                    dose.status = 'to take'
+                }
+                if (newStatus !== 'taken' && date > 9) {
+                    dose.status = 'missed'
+                }
                 organizedDoses.morning.push(dose);
-            } else if (hour >= 12 && hour < 17) {
+
+            } else if (dose.scheduledTime === "noon") {
+                if (newStatus !== 'taken' && 11 < date < 13) {
+                    dose.status = 'to take'
+                }
+                if (newStatus !== 'taken' && date > 13) {
+                    dose.status = 'missed'
+                }
                 organizedDoses.noon.push(dose);
             } else {
+                if (newStatus !== 'taken' && 16 < date < 19) {
+                    dose.status = 'to take'
+                }
+                if (newStatus != 'taken' && date > 19) {
+                    dose.status = 'missed'
+                }
                 organizedDoses.evening.push(dose);
             }
+            await dose.save();
         }
+
         res.json({
             success: true,
             data: organizedDoses
         });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ error: error.message });
     }
 }

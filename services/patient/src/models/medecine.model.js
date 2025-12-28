@@ -23,8 +23,7 @@ const medicineSchema = new mongoose.Schema({
         unit: { type: String, default: 'tablet' },
         frequency: { type: String, default: 'daily' },
         timesPerDay: Number,
-        specificTimes: [String], // ["08:00", "12:00", "20:00"]
-        daysOfWeek: [Number], // [1,2,3,4,5,6,7] - Sunday=1
+        specificTimes: [String], // ["mornnig", "noon"]
         instructions: String
     },
 

@@ -17,4 +17,6 @@ router.post('/prescription/:id/medicines', prescriptionControllers.addMedecineTo
 // Get expiring prescriptions
 router.get('/prescription/expiring/soon', prescriptionControllers.getExpiringPrescreption);
 
+router.get('/dashboard/summary', prescriptionControllers.getDashboardSummary);
+
 export default router;
