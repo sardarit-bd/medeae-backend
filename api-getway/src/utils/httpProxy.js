@@ -3,7 +3,7 @@ import { SERVICES } from "./serviceRegistry.js";
 
 export default function forward(service) {
 
-
+    console.log(SERVICES)
 
     if (!SERVICES[service]) {
         throw new Error(`Unknown service requested: ${service}`);

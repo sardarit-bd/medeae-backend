@@ -1,5 +1,7 @@
+
 export const SERVICES = {
-    AUTH: "http://medease-auth-backend:5001",
-    PROFILE: "http://medease-profile-backend:5002",
-    PATIENT: "http://medease-patient-backend:5003",
+    AUTH: process.env.AUTH_DOMAIN,
+    PROFILE: process.env.PROFILE_DOMAIN,
+    PATIENT: process.env.PATIENT_DOMAIN,
 };
+
