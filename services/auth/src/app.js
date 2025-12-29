@@ -30,25 +30,24 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use((req, res, next) => {
-    console.log("🔥 Incoming request:");
-    console.log("Method:", req.method);
-    console.log("Path:", req.path);
-    console.log("Original URL:", req.originalUrl);
-    console.log("From:", req.headers['x-forwarded-for']);
-    console.log("Gateway sent host:", req.headers.host);
-    next();
-});
-
-app.use("/hi", (req, res) => {
-    res.send("Hello from Auth Service 👋");
-})
 
 
 /********** auth Routes Define Here *********/
 app.use("/", authRoutes);
+
+
 /********** health check Routes Define Here *********/
 app.use("/", healthRoutes);
+
+
+// health check
+app.get("/", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        service: "auth services",
+        uptime: process.uptime(),
+    });
+});
 
 
 app.use(errorHandler);

@@ -37,6 +37,16 @@ app.use("/", healthRoutes);
 
 
 
+// health check
+app.get("/", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        service: "profile service",
+        uptime: process.uptime(),
+    });
+});
+
+
 
 /******* Export the module ******/
 export default app;
