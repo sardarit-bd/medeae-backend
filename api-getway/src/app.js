@@ -15,6 +15,17 @@ app.use(express.json());
 
 applyRoutes(app);
 
+
+// health check
+app.get("/", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        service: "api-getway",
+        uptime: process.uptime(),
+    });
+});
+
+
 app.use(errorHandler);
 app.use(notFound);
 

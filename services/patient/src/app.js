@@ -48,6 +48,17 @@ app.use('/doses', dosesRoutes)
 
 
 
+// health check
+app.get("/", (req, res) => {
+    res.status(200).json({
+        status: "OK",
+        service: "patient services",
+        uptime: process.uptime(),
+    });
+});
+
+
+
 
 /******* Export the module ******/
 export default app;
